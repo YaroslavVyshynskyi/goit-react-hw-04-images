@@ -1,43 +1,40 @@
-import React, { Component } from "react";
+import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
 import css from "./Modal.module.css"
 import PropTypes from 'prop-types'
 
 const modalRoot = document.querySelector("#modal-root");
 
-class Modal extends Component {
+const Modal = ({ image, onClose }) => {
     
-    componentDidMount() { 
-        window.addEventListener("keydown", this.handleKeyDown);
-    }
+    useEffect(() => {
+        
+        const handleKeyDown = event => {
+            if (event.code === "Escape") {
+                onClose();
+            }
+        };
 
-    componentWillUnmount() { 
-        window.removeEventListener("keydown", this.handleKeyDown);
-    }
-
-    handleKeyDown = event => {
-        if (event.code === "Escape") {
-            this.props.onClose();
-        }
-    };
+        window.addEventListener("keydown", handleKeyDown, true);
+        return window.removeEventListener("keydown", handleKeyDown);
+    }, [onClose]);
     
-    handleBackdropClick = event => { 
-        if (event.currentTarget === event.target) { 
-            this.props.onClose();
+    const handleBackdropClick = event => {
+        if (event.currentTarget === event.target) {
+            onClose();
         }
     }
 
-    render() { 
-        const { largeImageURL, tags } = this.props.image;
-        return createPortal(
-            <div className={css.Modal__backdrop} onClick={this.handleBackdropClick} >
-                <div className={css.Modal__content}>
-                    <img src={largeImageURL} alt={tags}></img>
-                </div>
-            </div>,
-            modalRoot,
-        );
-    }
+    const { largeImageURL, tags } = image;
+    
+    return createPortal(
+        <div className={css.Modal__backdrop} onClick={handleBackdropClick} >
+            <div className={css.Modal__content}>
+                <img src={largeImageURL} alt={tags}></img>
+            </div>
+        </div>,
+        modalRoot,
+    );
 };
 
 Modal.propTypes = {
