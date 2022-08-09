@@ -25,12 +25,13 @@ const App = () => {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState(Status.IDLE);
   const [selectedImageId, setSelectedImageId] = useState("");
+  const [totalImages, setTotalImages] = useState(0);
 
   const fetchImages = async (search, page = 1) => {
     const result = await axios.get(
       `https://pixabay.com/api/?q=${search}&page=${page}&key=${KEY}&image_type=photo&orientation=horizontal&per_page=${itemsPerPage}`
     )
-    return result.data.hits;
+    return { images: result.data.hits, totalImages: result.data.totalHits };
   };
 
   const handleFormSubmit = async (search) => {
@@ -40,10 +41,12 @@ const App = () => {
     }
       try {
         setStatus(Status.LOADING)
-        const images = await fetchImages(search);
+        const { images, totalImages: fetchTotalImages } = await fetchImages(search);
         setSearchQuery(search);
         setImages(images);
         setStatus(Status.SUCCESS);
+        setPage(1);
+        setTotalImages(fetchTotalImages);
       } catch (error) {
         toast.error(error);
         setStatus(Status.ERROR)
@@ -52,14 +55,14 @@ const App = () => {
 
   const loadMore = async () => {
     try {
-        setStatus(Status.LOADING)
-        const newImages = await fetchImages(searchQuery, page + 1);
-        setImages([...images, ...newImages]);
-        setStatus(Status.SUCCESS);
-      } catch (error) {
-        toast.error(error);
-        setStatus(Status.ERROR)
-      }
+      setStatus(Status.LOADING)
+      const { images: newImages } = await fetchImages(searchQuery, page + 1);
+      setImages([...images, ...newImages]);
+      setStatus(Status.SUCCESS);
+    } catch (error) {
+      toast.error(error);
+      setStatus(Status.ERROR)
+    }
     setPage(page + 1);
   };
 
@@ -69,14 +72,15 @@ const App = () => {
   }
 
   const hasImages = !!images.length;
+  const hasMoreImages = images.length < totalImages;
   const selectedImage = images.find((image) => { return image.id === selectedImageId });
   return (
     <div className="App">
       { selectedImage && <Modal onClose={toggleModal} image={selectedImage} />}
-      <Searchbar onSubmit={handleFormSubmit} />
+      <Searchbar onSubmit={handleFormSubmit} searchQuery={ searchQuery } />
       <ImageGallery images={images} onImageItemClick={toggleModal} />
       {!hasImages && "Enter search word"}
-      {hasImages && status === Status.SUCCESS && <Button onClick={loadMore} />}
+      {hasImages && hasMoreImages && status === Status.SUCCESS && <Button onClick={loadMore} />}
       {status === Status.LOADING && <Loader />}
       <ToastContainer autoClose={1000} />
     </div>
