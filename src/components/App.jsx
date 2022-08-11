@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import axios from 'axios';
 import Searchbar from './Searchbar/Searchbar';
@@ -34,24 +34,37 @@ const App = () => {
     return { images: result.data.hits, totalImages: result.data.totalHits };
   };
 
-  const handleFormSubmit = async (search) => {
-    if (search === searchQuery) {
-      toast.info("this request has already been processed. Please enter new request!");
-      return
+  const saveImages = useCallback (async () => {
+    try {
+      setStatus(Status.LOADING)
+      const { images, totalImages: fetchTotalImages } = await fetchImages(searchQuery);
+      setImages(images);
+      setStatus(Status.SUCCESS);
+      setTotalImages(fetchTotalImages);
+    } catch (error) {
+      toast.error(error);
+      setStatus(Status.ERROR)
     }
-      try {
-        setStatus(Status.LOADING)
-        const { images, totalImages: fetchTotalImages } = await fetchImages(search);
-        setSearchQuery(search);
-        setImages(images);
-        setStatus(Status.SUCCESS);
-        setPage(1);
-        setTotalImages(fetchTotalImages);
-      } catch (error) {
-        toast.error(error);
-        setStatus(Status.ERROR)
-      }
-};
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (!searchQuery) {
+      return;
+    }
+    saveImages();
+  }, [saveImages, searchQuery]);
+
+
+  const handleFormSubmit = search => { 
+    if (search === searchQuery) {
+      toast.info("this request has already been processed. Please enter new request");
+      return;
+    }
+    setSearchQuery(search);
+    setPage(1);
+    setImages([]);
+    setTotalImages(0);
+  }
 
   const loadMore = async () => {
     try {
@@ -66,7 +79,6 @@ const App = () => {
     setPage(page + 1);
   };
 
-  
   const toggleModal = (imageId) => {
     setSelectedImageId(imageId || "");
   }

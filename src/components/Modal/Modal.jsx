@@ -38,7 +38,7 @@ const Modal = ({ image, onClose }) => {
 };
 
 Modal.propTypes = {
-    image: PropTypes.shape({tags: PropTypes.string, largeImageURL: PropTypes.string}).isRequired,
+    image: PropTypes.shape({tags: PropTypes.string.isRequired, largeImageURL: PropTypes.string.isRequired}).isRequired,
     onClose: PropTypes.func.isRequired,
 };
 
