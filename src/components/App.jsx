@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import axios from 'axios';
 import Searchbar from './Searchbar/Searchbar';
@@ -33,26 +33,25 @@ const App = () => {
     )
     return { images: result.data.hits, totalImages: result.data.totalHits };
   };
-
-  const saveImages = useCallback (async () => {
-    try {
-      setStatus(Status.LOADING)
-      const { images, totalImages: fetchTotalImages } = await fetchImages(searchQuery);
-      setImages(images);
-      setStatus(Status.SUCCESS);
-      setTotalImages(fetchTotalImages);
-    } catch (error) {
-      toast.error(error);
-      setStatus(Status.ERROR)
-    }
-  }, [searchQuery]);
-
+  
   useEffect(() => {
     if (!searchQuery) {
       return;
     }
+    const saveImages = async () => {
+      try {
+        setStatus(Status.LOADING)
+        const { images: newImages, totalImages: fetchTotalImages } = await fetchImages(searchQuery, page);
+        setImages((oldImages) => [...oldImages, ...newImages]);
+        setStatus(Status.SUCCESS);
+        setTotalImages(fetchTotalImages);
+      } catch (error) {
+        toast.error(error);
+        setStatus(Status.ERROR)
+      }
+    }
     saveImages();
-  }, [saveImages, searchQuery]);
+  }, [page, searchQuery]);
 
 
   const handleFormSubmit = search => { 
@@ -66,16 +65,7 @@ const App = () => {
     setTotalImages(0);
   }
 
-  const loadMore = async () => {
-    try {
-      setStatus(Status.LOADING)
-      const { images: newImages } = await fetchImages(searchQuery, page + 1);
-      setImages([...images, ...newImages]);
-      setStatus(Status.SUCCESS);
-    } catch (error) {
-      toast.error(error);
-      setStatus(Status.ERROR)
-    }
+  const loadMore = () => {
     setPage(page + 1);
   };
 
